@@ -6,5 +6,12 @@
     android:layout_height="match_parent"
     tools:context="com.example.naveedanwar.chatapp.MainActivity">
 
-
+<include layout="@layout/toolbar"></include>
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:text="Main Activity" />
 </RelativeLayout>
