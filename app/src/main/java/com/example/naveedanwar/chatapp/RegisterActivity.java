@@ -16,6 +16,11 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.HashMap;
 
 /**
  * Created by Naveed Anwar on 10/09/2017.
@@ -27,6 +32,7 @@ public class RegisterActivity extends AppCompatActivity{
     private EditText username , email , password;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
+    private DatabaseReference firebaseDatabase;
     private Toolbar tb;
     private ProgressDialog pg;
     @Override
@@ -60,12 +66,28 @@ public class RegisterActivity extends AppCompatActivity{
         });
     }
 
-    public void startRegister(String uname , String uemail , String upassword){
+    public void startRegister(final String uname , String uemail , String upassword){
         pg.show();
         mAuth.createUserWithEmailAndPassword(uemail, upassword)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
+
+
+                        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+                        String uid = firebaseUser.getUid();
+                        firebaseDatabase = FirebaseDatabase.getInstance().getReference().child("Users").child(uid);
+
+
+                        HashMap<String,String> hashMap = new HashMap<String, String>();
+                        hashMap.put("username",uname);
+                        hashMap.put("status","Hi there!");
+                        hashMap.put("image","default");
+                        hashMap.put("thumbnail_image","default");
+
+                        firebaseDatabase.setValue(hashMap);
+
+
                       //  Log.d(TAG, "createUserWithEmail:onComplete:" + task.isSuccessful());
 
                         // If sign in fails, display a message to the user. If sign in succeeds

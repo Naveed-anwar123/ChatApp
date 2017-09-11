@@ -2,11 +2,14 @@ package com.example.naveedanwar.chatapp;
 
 import android.content.Intent;
 import android.support.annotation.NonNull;
+import android.support.design.widget.TabLayout;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TableLayout;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -16,6 +19,9 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private Toolbar tb;
+    private ViewPager viewPager;
+    private TabLayout tableLayout;
+    private SectionViewPager mSectionViewPager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -25,6 +31,13 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(tb);
         getSupportActionBar().setTitle("Chat App");
         FirebaseUser user = mAuth.getCurrentUser();
+        viewPager =(ViewPager)findViewById(R.id.viewPager);
+        mSectionViewPager = new SectionViewPager(getSupportFragmentManager());
+        viewPager.setAdapter(mSectionViewPager);
+
+        tableLayout =(TabLayout)findViewById(R.id.tabLayout);
+        tableLayout.setupWithViewPager(viewPager);
+
         if(user == null){
             startActivity(new Intent(MainActivity.this,StartActivity.class));
             finish();

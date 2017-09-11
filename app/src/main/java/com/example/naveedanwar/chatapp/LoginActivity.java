@@ -52,7 +52,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void startLogin(String email , String password){
-        pg.setTitle("Authenticaton");
+        pg.setTitle("Authentication");
         pg.setMessage("Please wait.....");
         pg.show();
         mAuth.signInWithEmailAndPassword(email, password)
@@ -60,13 +60,10 @@ public class LoginActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
-
                             pg.dismiss();
                             startActivity(new Intent(LoginActivity.this, MainActivity.class));
                             finish();
                         }
-
-                        // ...
                     }
                 });
     }
