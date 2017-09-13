@@ -68,8 +68,17 @@ public class MainActivity extends AppCompatActivity {
          if(item.getItemId() == R.id.logout){
              mAuth.signOut();
              startActivity(new Intent(MainActivity.this,StartActivity.class));
-             finish();
+
          }
+         else if(item.getItemId() == R.id.setting){
+             startActivity(new Intent(MainActivity.this,AccountSettingsActivity.class));
+
+         }
+         else if(item.getItemId() == R.id.users){
+             startActivity(new Intent(MainActivity.this,AllUsersActivity.class));
+
+         }
+
         return true;
     }
 }
