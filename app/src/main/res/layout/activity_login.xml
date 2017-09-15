@@ -42,7 +42,7 @@
         android:layout_marginRight="0dp"
         android:layout_marginTop="34dp"
         android:backgroundTint="@color/colorPrimary"
-        android:text="Create Account"
+        android:text="Sign in"
         android:textColor="#fafafafa"
         app:layout_constraintHorizontal_bias="0.905"
         app:layout_constraintLeft_toLeftOf="parent"

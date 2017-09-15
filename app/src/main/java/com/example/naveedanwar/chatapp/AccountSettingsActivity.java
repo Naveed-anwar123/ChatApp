@@ -3,6 +3,7 @@ package com.example.naveedanwar.chatapp;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.media.MediaDrm;
 import android.net.Uri;
 import android.os.Bundle;
@@ -30,9 +31,15 @@ import com.squareup.picasso.Picasso;
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.yalantis.ucrop.UCrop;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import id.zelory.compressor.Compressor;
 
 import static android.R.attr.maxWidth;
 import static android.R.attr.progress;
@@ -62,6 +69,8 @@ public class AccountSettingsActivity extends Activity {
         update = (Button)findViewById(R.id.update_status);
         imageView =(CircleImageView)findViewById(R.id.circleImageView);
         pg = new ProgressDialog(this);
+        pg.setTitle("Uploading");
+        pg.setMessage("Please wait");
         firebaseAuth = FirebaseAuth.getInstance();
         uid = firebaseAuth.getCurrentUser().getUid();
         mStorageRef = FirebaseStorage.getInstance().getReference();
@@ -76,21 +85,22 @@ public class AccountSettingsActivity extends Activity {
                 String thumbnail_image = dataSnapshot.child("thumbnail_image").getValue().toString();
                 name.setText(uname);
                 status.setText(ustatus);
-                Picasso.with(AccountSettingsActivity.this).load(image).into(imageView);
+                if(!image.equals("default")){
+                    Picasso.with(AccountSettingsActivity.this).load(image).placeholder(R.drawable.crib).into(imageView);
+                }
             }
-
             @Override
             public void onCancelled(DatabaseError databaseError) {
 
             }
         });
-update.setOnClickListener(new View.OnClickListener() {
-    @Override
-    public void onClick(View view) {
-        startActivity(new Intent(AccountSettingsActivity.this,StatusActivity.class));
+        update.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(AccountSettingsActivity.this,StatusActivity.class));
 
-    }
-});
+            }
+        });
 
         change.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -108,6 +118,8 @@ update.setOnClickListener(new View.OnClickListener() {
     }
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        pg.show();
+        final byte[] b;
         super.onActivityResult(requestCode,resultCode,data);
         Uri resultUri = data.getData();
         if(requestCode==galleryPic && resultCode==RESULT_OK){
@@ -118,34 +130,71 @@ update.setOnClickListener(new View.OnClickListener() {
         if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
             CropImage.ActivityResult result = CropImage.getActivityResult(data);
             if (resultCode == RESULT_OK) {
-                Uri image = result.getUri();
+                final Uri image = result.getUri();
+                File path = new File(image.getPath());
+
+
                 String randomname =random()+".jpg";
-                StorageReference dref = mStorageRef.child("profile_images").child(randomname);
-                dref.putFile(image).addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
+                final StorageReference dref = mStorageRef.child("profile_images").child(randomname);
+                final StorageReference thumbnail = mStorageRef.child("profile_images").child("thumbnails").child(uid+".jpg");
 
-                    @Override
-                    public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
-                        pg.show();
-                   if(task.isSuccessful()){
-                      final String url = task.getResult().getDownloadUrl().toString();
-                       databaseReference.child("image").setValue(url).addOnCompleteListener(new OnCompleteListener<Void>() {
-                           @Override
-                           public void onComplete(@NonNull Task<Void> task) {
-
-                              pg.setTitle("Profile Picture");
-                              pg.setMessage("Uploading please wait....");
-                              pg.dismiss();
-                              Picasso.with(AccountSettingsActivity.this).load(url).into(imageView);
-
-                           }
-                       });
+                try {
+                    Bitmap compressedImageBitmap = new Compressor(this).setMaxHeight(200).setMaxWidth(200).compressToBitmap(path);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    compressedImageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                    b = baos.toByteArray();
+                    UploadTask uploadTask = thumbnail.putBytes(b);
+                    uploadTask.addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                            final String ur = task.getResult().getDownloadUrl().toString();
 
 
+                            dref.putFile(image).addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
 
-                     //  Toast.makeText(AccountSettingsActivity.this,"Toast",Toast.LENGTH_LONG).show();
-                   }
-                    }
-                });
+                                @Override
+                                public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                                    if(task.isSuccessful()){
+                                        final String url = task.getResult().getDownloadUrl().toString();
+
+                                        Map hash = new HashMap();
+                                        hash.put("image",url);
+                                        hash.put("thumbnail_image",ur);
+                                        databaseReference.updateChildren(hash).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<Void> task) {
+
+
+
+                                                Picasso.with(AccountSettingsActivity.this).load(url).into(imageView);
+                                                pg.dismiss();
+                                            }
+                                        });
+
+
+
+                                        //  Toast.makeText(AccountSettingsActivity.this,"Toast",Toast.LENGTH_LONG).show();
+                                    }
+                                }
+                            });
+
+
+
+
+
+
+
+
+
+
+                        }
+                    });
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+
 
 
             } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {

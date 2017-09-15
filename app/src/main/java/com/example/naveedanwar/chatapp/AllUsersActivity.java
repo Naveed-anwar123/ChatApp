@@ -1,5 +1,7 @@
 package com.example.naveedanwar.chatapp;
 
+import android.content.Context;
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -18,19 +20,19 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class AllUsersActivity extends AppCompatActivity {
 
     private Toolbar toolbar;
-    public  RecyclerView mList;
+    public  RecyclerView mList;     // 1
     private DatabaseReference databaseReference;
-
+    private final static int user =1;
+private static Context context;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-
+        context = AllUsersActivity.this;
         setContentView(R.layout.activity_all_users);
-        mList = (RecyclerView)findViewById(R.id.mList);
-        mList.setHasFixedSize(true);
-        mList.setLayoutManager(new LinearLayoutManager(this));
+        mList = (RecyclerView)findViewById(R.id.mList);   //  2
+        mList.setHasFixedSize(true);                    //  3
+        mList.setLayoutManager(new LinearLayoutManager(this));//  4
         toolbar = (Toolbar)findViewById(R.id.usertoolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle("All Users");
@@ -38,7 +40,7 @@ public class AllUsersActivity extends AppCompatActivity {
         databaseReference= FirebaseDatabase.getInstance().getReference().child("Users");
 
     }
-
+    //  6
     @Override
     protected void onStart() {
         super.onStart();
@@ -47,13 +49,22 @@ public class AllUsersActivity extends AppCompatActivity {
                 R.layout.single_user_layout,
                 UserViewHolder.class,
                 databaseReference
-
         ) {
             @Override
             protected void populateViewHolder(UserViewHolder viewHolder, Users model, int position) {
                 viewHolder.setName(model.getUsername());
                 viewHolder.setStatus(model.getStatus());
-                viewHolder.setImage(model.getImage());
+                viewHolder.setThumbnail_image(model.getThumbnail_image());
+                final String userid = getRef(position).getKey();
+                viewHolder.mView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                      Intent i = new Intent(AllUsersActivity.this,ProfileActivity.class);
+                        i.putExtra("user_id",userid);
+                        startActivityForResult(i,user);
+
+                    }
+                });
             }
         };
         mList.setAdapter(firebaseRecyclerAdapter);
@@ -61,7 +72,7 @@ public class AllUsersActivity extends AppCompatActivity {
 
 
 
-
+//  5
 
     public static class UserViewHolder extends RecyclerView.ViewHolder{
         View mView;
@@ -80,18 +91,11 @@ public class AllUsersActivity extends AppCompatActivity {
             status.setText(ustatus);
         }
 
-        public void setImage(String uimage){
+        public void setThumbnail_image(String uimage){
             CircleImageView image = (CircleImageView)mView.findViewById(R.id.urimage);
-          //  Picasso.with(this).load(uimage).into(image);
-
-
+            Picasso.with(context).load(uimage).placeholder(R.drawable.crib).into(image);
         }
+
+
     }
-
-
-
-
-
-
-
 }
