@@ -2,6 +2,8 @@ package com.example.naveedanwar.chatapp;
 
 import android.app.ProgressDialog;
 import android.graphics.Typeface;
+import android.icu.text.DateFormat;
+import android.icu.text.SimpleDateFormat;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -21,6 +23,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
+import java.util.Calendar;
+import java.util.Date;
+
 public class ProfileActivity extends AppCompatActivity {
 
 
@@ -29,7 +34,7 @@ public class ProfileActivity extends AppCompatActivity {
     private ImageView imageView;
     private Button sendFriendRequest;
     String uid;
-    private DatabaseReference databaseReference , requestReference;
+    private DatabaseReference databaseReference , requestReference , friendReference;
     private ProgressDialog pg;
     private Button sendbtn , declinebtn;
     private String current_status;
@@ -55,6 +60,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         databaseReference = FirebaseDatabase.getInstance().getReference().child("Users").child(uid);
         requestReference = FirebaseDatabase.getInstance().getReference().child("FriendRequests");
+        friendReference = FirebaseDatabase.getInstance().getReference().child("Friends");
         mAuth = FirebaseAuth.getInstance();
         databaseReference.addValueEventListener(new ValueEventListener() {
             @Override
@@ -68,8 +74,8 @@ public class ProfileActivity extends AppCompatActivity {
 
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                       Toast.makeText(ProfileActivity.this,"Toast",Toast.LENGTH_LONG).show();
                         if(dataSnapshot.hasChild(uid)){
+
                             String stat = dataSnapshot.child(uid).child("request_type").getValue().toString();
                             if(stat.equals("received")){
                                 current_status = "received";
@@ -80,8 +86,24 @@ public class ProfileActivity extends AppCompatActivity {
                                 sendbtn.setText("Cancel Friend Request");
                             }
                         }
+
                     }
 
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+                requestReference.child(mAuth.getCurrentUser().getUid()).child(uid).addValueEventListener(new ValueEventListener() {
+
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        Toast.makeText(ProfileActivity.this,"it works",Toast.LENGTH_LONG).show();
+                        //if(dataSnapshot.hasChild(uid)){
+                            current_status = "now_friends";
+                            sendbtn.setText("Unfriend this Person");
+                        //}
+                    }
                     @Override
                     public void onCancelled(DatabaseError databaseError) {
 
@@ -134,6 +156,50 @@ public class ProfileActivity extends AppCompatActivity {
                     });
                 }
 
+
+                else if (current_status.equals("received")){
+
+                    final Date currentTime = Calendar.getInstance().getTime();
+                    friendReference.child(mAuth.getCurrentUser().getUid()).child(uid).setValue(currentTime).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+
+                            friendReference.child(uid).child(mAuth.getCurrentUser().getUid()).setValue(currentTime).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+
+                                    requestReference.child(mAuth.getCurrentUser().getUid()).child(uid).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<Void> task) {
+                                            requestReference.child(uid).child(mAuth.getCurrentUser().getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<Void> task) {
+                                                    current_status = "now_friends";
+                                                    sendbtn.setText("Unfriend this person");
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+                else if(current_status.equals("now_friends")){
+                    friendReference.child(mAuth.getCurrentUser().getUid()).child(uid).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            friendReference.child(uid).child(mAuth.getCurrentUser().getUid()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    current_status="not_friends";
+                                    sendbtn.setText("Send Friend Request");
+                                }
+                            });
+                        }
+                    });
+                }
+
             }
         });
 
@@ -149,7 +215,7 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        Toast.makeText(ProfileActivity.this,uid,Toast.LENGTH_LONG).show();
+
 
     }
 }
